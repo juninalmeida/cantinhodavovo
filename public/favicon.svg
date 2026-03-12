@@ -1,0 +1,30 @@
+<svg width="256" height="256" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Fundo Circular -->
+  <circle cx="32" cy="32" r="30" fill="#FCFAF5" stroke="#B43A2F" stroke-width="2" />
+  
+  <!-- Cabelo e Coque -->
+  <circle cx="32" cy="18" r="10" fill="#E8E8E8" stroke="#D0D0D0" stroke-width="1.5" />
+  <path d="M14 34 C14 18 50 18 50 34 C52 41 52 45 50 48 C47 43 17 43 14 48 C12 45 12 41 14 34 Z" fill="#E8E8E8" stroke="#D0D0D0" stroke-width="1.5" />
+  
+  <!-- Rosto -->
+  <path d="M18 30 C18 20 46 20 46 30 C46 44 41 50 32 50 C23 50 18 44 18 30 Z" fill="#F5D5BE" />
+  
+  <!-- Bochechas Coradas -->
+  <circle cx="23" cy="38" r="3.5" fill="#E07070" opacity="0.6" />
+  <circle cx="41" cy="38" r="3.5" fill="#E07070" opacity="0.6" />
+  
+  <!-- Sorriso -->
+  <path d="M28 42 Q 32 47 36 42" stroke="#B43A2F" stroke-width="3" stroke-linecap="round" fill="none" />
+  
+  <!-- Nariz -->
+  <path d="M31 36 Q 32 38 33 36" stroke="#C8A58E" stroke-width="2" stroke-linecap="round" fill="none" />
+  
+  <!-- Óculos -->
+  <circle cx="25" cy="32" r="6" fill="white" fill-opacity="0.3" stroke="#4A2E24" stroke-width="3" />
+  <circle cx="39" cy="32" r="6" fill="white" fill-opacity="0.3" stroke="#4A2E24" stroke-width="3" />
+  <path d="M31 32 Q 32 30 33 32" stroke="#4A2E24" stroke-width="3" fill="none" />
+  
+  <!-- Olhos -->
+  <circle cx="25" cy="32" r="2" fill="#4A2E24" />
+  <circle cx="39" cy="32" r="2" fill="#4A2E24" />
+</svg>
