@@ -1,4 +1,4 @@
-import { OrderService } from '../../dist-server/modules/orders/application/order-service.js'
+import { OrderService } from '../../dist-server/server/modules/orders/application/order-service.js'
 
 const catalogRepository = {
   async listActiveProducts() {

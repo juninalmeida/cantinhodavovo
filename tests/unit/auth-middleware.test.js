@@ -1,4 +1,5 @@
-import { requireRole } from '../../dist-server/server/middleware/auth.js'
+import { jest } from '@jest/globals'
+import { requireRole } from '../../dist-server/server/core/middleware/auth.js'
 
 describe('requireRole middleware', () => {
   it('blocks users without the required role', () => {

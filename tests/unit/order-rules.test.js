@@ -1,4 +1,4 @@
-import { calculateOrderSnapshot, canTransitionOrderStatus, getNextOrderStatus } from '../../dist-server/modules/orders/domain/order-rules.js'
+import { calculateOrderSnapshot, canTransitionOrderStatus, getNextOrderStatus } from '../../dist-server/server/modules/orders/domain/order-rules.js'
 
 describe('order rules', () => {
   it('advances order statuses only to the immediate next status', () => {

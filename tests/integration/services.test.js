@@ -1,10 +1,10 @@
-import { AdminService } from '../../dist-server/modules/admin/application/admin-service.js'
-import { AuthService } from '../../dist-server/modules/auth/application/auth-service.js'
-import { CatalogService } from '../../dist-server/modules/catalog/application/catalog-service.js'
-import { PasswordService } from '../../dist-server/modules/auth/infrastructure/password-service.js'
-import { JwtService } from '../../dist-server/modules/auth/infrastructure/token-service.js'
-import { OrderService } from '../../dist-server/modules/orders/application/order-service.js'
-import { AppError } from '../../dist-server/server/http/app-error.js'
+import { AdminService } from '../../dist-server/server/modules/admin/application/admin-service.js'
+import { AuthService } from '../../dist-server/server/modules/auth/application/auth-service.js'
+import { CatalogService } from '../../dist-server/server/modules/catalog/application/catalog-service.js'
+import { PasswordService } from '../../dist-server/server/modules/auth/infrastructure/password-service.js'
+import { JwtService } from '../../dist-server/server/modules/auth/infrastructure/token-service.js'
+import { OrderService } from '../../dist-server/server/modules/orders/application/order-service.js'
+import { AppError } from '../../dist-server/server/core/http/app-error.js'
 
 function createUserRepository() {
   const users = []
@@ -31,6 +31,17 @@ function createUserRepository() {
     },
     async findById(id) {
       return users.find((user) => user.id === id) ?? null
+    },
+    async listAdminSummaries() {
+      return users.map((user) => ({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        role: user.role,
+        createdAt: user.createdAt,
+        hasDefaultAddress: user.role === 'CUSTOMER',
+      }))
     },
   }
 }
@@ -290,9 +301,32 @@ describe('service integration', () => {
     const catalogRepository = createCatalogRepository()
     const orderRepository = createOrderRepository()
     const auditLogs = createAuditLogRepository()
+    const userRepository = createUserRepository()
     const catalogService = new CatalogService(catalogRepository)
     const orderService = new OrderService(catalogRepository, orderRepository, auditLogs)
-    const adminService = new AdminService(orderRepository)
+    const adminService = new AdminService(orderRepository, userRepository)
+
+    await userRepository.create({
+      name: 'Cliente',
+      email: 'cliente@test.dev',
+      phone: '82999999999',
+      passwordHash: 'hash',
+      role: 'CUSTOMER',
+    })
+    await userRepository.create({
+      name: 'Atendente',
+      email: 'atendente@test.dev',
+      phone: '82999999998',
+      passwordHash: 'hash',
+      role: 'ATTENDANT',
+    })
+    await userRepository.create({
+      name: 'Admin',
+      email: 'admin@test.dev',
+      phone: '82999999997',
+      passwordHash: 'hash',
+      role: 'ADMIN',
+    })
 
     const customer = {
       id: 'customer-1',
@@ -361,5 +395,8 @@ describe('service integration', () => {
     const metrics = await adminService.getMetrics()
     expect(metrics.totalOrders).toBe(2)
     expect(metrics.pendingOrders).toBe(1)
+
+    const adminUsers = await adminService.listUsers()
+    expect(adminUsers).toHaveLength(3)
   })
 })

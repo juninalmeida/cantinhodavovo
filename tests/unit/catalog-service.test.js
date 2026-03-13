@@ -1,4 +1,4 @@
-import { CatalogService } from '../../dist-server/modules/catalog/application/catalog-service.js'
+import { CatalogService } from '../../dist-server/server/modules/catalog/application/catalog-service.js'
 
 describe('CatalogService', () => {
   it('separates menu products from combo technical SKUs', async () => {
