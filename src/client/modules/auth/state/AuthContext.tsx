@@ -2,7 +2,6 @@ import { createContext, useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import type { Address, AuthenticatedUser, DeliveryAddressInput } from '@shared/contracts/app'
 import { authApi } from '@client/modules/auth/api/auth'
-import { HttpError } from '@client/shared/api'
 
 interface AuthContextValue {
   user: AuthenticatedUser | null
@@ -26,24 +25,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async function restoreSession() {
       try {
         const { user, defaultAddress } = await authApi.me()
-        if (active) {
-          setUser(user)
-          setDefaultAddress(defaultAddress ?? null)
+        if (!active) {
+          return
         }
-      } catch (error) {
-        if (error instanceof HttpError && error.status === 401) {
-          try {
-            const { user, defaultAddress } = await authApi.refresh()
-            if (active) {
-              setUser(user)
-              setDefaultAddress(defaultAddress ?? null)
-            }
-          } catch {
-            if (active) {
-              setUser(null)
-              setDefaultAddress(null)
-            }
-          }
+
+        setUser(user)
+        setDefaultAddress(defaultAddress ?? null)
+      } catch {
+        if (active) {
+          setUser(null)
+          setDefaultAddress(null)
         }
       } finally {
         if (active) {

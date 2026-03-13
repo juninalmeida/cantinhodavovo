@@ -6,6 +6,11 @@ interface SessionResponse {
   defaultAddress?: Address | null
 }
 
+interface SessionStateResponse {
+  user: AuthenticatedUser | null
+  defaultAddress?: Address | null
+}
+
 export const authApi = {
   login(input: { email: string; password: string }) {
     return request<SessionResponse>('/api/auth/login', { method: 'POST', body: input })
@@ -17,7 +22,7 @@ export const authApi = {
     return request<SessionResponse>('/api/auth/refresh', { method: 'POST' })
   },
   me() {
-    return request<SessionResponse>('/api/auth/me')
+    return request<SessionStateResponse>('/api/auth/me')
   },
   logout() {
     return request<void>('/api/auth/logout', { method: 'POST' })
