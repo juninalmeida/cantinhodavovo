@@ -9,5 +9,5 @@
     "noEmit": false,
     "types": ["node", "jest"]
   },
-  "include": ["src/server/**/*", "src/modules/**/*", "src/shared/**/*"]
+  "include": ["src/server/**/*", "src/shared/**/*"]
 }

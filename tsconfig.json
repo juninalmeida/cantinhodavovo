@@ -3,7 +3,12 @@
   "compilerOptions": {
     "jsx": "react-jsx",
     "noEmit": true,
-    "types": ["vite/client"]
+    "types": ["vite/client"],
+    "baseUrl": ".",
+    "paths": {
+      "@client/*": ["src/client/*"],
+      "@shared/*": ["src/shared/*"]
+    }
   },
   "include": ["src/client/**/*", "src/shared/**/*"]
 }

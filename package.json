@@ -6,17 +6,17 @@
   "scripts": {
     "dev": "concurrently -k \"npm:dev:web\" \"npm:dev:api\"",
     "dev:web": "vite",
-    "dev:api": "tsx watch src/server/index.ts",
+    "dev:api": "tsx watch src/server/app/index.ts",
     "build": "npm run build:web && npm run build:api",
     "build:web": "vite build",
     "build:api": "tsc -p tsconfig.server.json",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "npm run build:api && jest --runInBand",
-    "db:migrate": "tsx scripts/migrate.ts",
-    "db:seed": "tsx scripts/seed.ts",
-    "docker:up": "docker compose up --build",
-    "docker:down": "docker compose down -v"
+    "test": "npm run build:api && NODE_OPTIONS=--experimental-vm-modules jest --runInBand",
+    "db:migrate": "tsx tools/database/migrate.ts",
+    "db:seed": "tsx tools/database/seed.ts",
+    "docker:up": "docker compose -f infra/docker/docker-compose.yml up --build",
+    "docker:down": "docker compose -f infra/docker/docker-compose.yml down -v"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
