@@ -32,6 +32,13 @@ export default defineConfig([
       'no-unused-vars': 'off',
       '@typescript-eslint/no-unused-vars': ['error', { varsIgnorePattern: '^[_A-Z]', argsIgnorePattern: '^_' }],
       '@typescript-eslint/no-explicit-any': 'off',
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: "JSXAttribute[name.name='dangerouslySetInnerHTML']",
+          message: 'dangerouslySetInnerHTML is blocked by default in this repository. Sanitize and document the review before allowing it.',
+        },
+      ],
       'react-refresh/only-export-components': 'off',
     },
   },

@@ -9,5 +9,5 @@
     "noEmit": false,
     "types": ["node"]
   },
-  "include": ["tools/database/**/*", "src/server/core/config/env.ts"]
+  "include": ["tools/**/*", "src/server/core/config/env.ts"]
 }

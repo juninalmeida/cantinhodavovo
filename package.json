@@ -3,18 +3,26 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
+  "engines": {
+    "node": "24.x"
+  },
   "scripts": {
     "dev": "concurrently -k \"npm:dev:web\" \"npm:dev:api\"",
     "dev:web": "vite",
     "dev:api": "tsx watch src/server/app/index.ts",
-    "build": "npm run build:web && npm run build:api",
+    "build": "npm run build:web && npm run build:api && npm run typecheck:vercel",
     "build:web": "vite build",
     "build:api": "tsc -p tsconfig.server.json && tsc -p tsconfig.tools.json",
+    "typecheck:vercel": "tsc -p tsconfig.vercel.json --noEmit",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "npm run build:api && NODE_OPTIONS=--experimental-vm-modules node ./node_modules/jest-cli/bin/jest.js --runInBand",
     "db:migrate": "tsx tools/database/migrate.ts",
     "db:seed": "tsx tools/database/seed.ts",
+    "admin:create": "tsx tools/database/create-admin.ts",
+    "deploy:preflight": "npm run lint && npm run build && npm run test && npm run security:audit-history",
+    "secrets:generate": "npm run build:api && node dist-server/tools/deploy/generate-production-env.js",
+    "security:audit-history": "npm run build:api && node dist-server/tools/security/audit-history.js",
     "docker:up": "docker compose -f infra/docker/docker-compose.yml up --build",
     "docker:down": "docker compose -f infra/docker/docker-compose.yml down -v"
   },
