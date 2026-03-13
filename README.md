@@ -1,6 +1,6 @@
 # Cantinho da Vovó SaaS Foundation
 
-Base inicial de um monólito modular para o Cantinho da Vovo, com:
+Base de um monólito modular para o Cantinho da Vovó, com:
 
 - `React + Vite + TypeScript` no frontend
 - `Express + Node.js + TypeScript` na API
@@ -34,6 +34,42 @@ Base inicial de um monólito modular para o Cantinho da Vovo, com:
 - `npm run db:seed`: cria usuários internos padrão
 - `npm run docker:up`: sobe `postgres`, `api` e `web`
 
+## Estrutura do projeto
+
+```text
+.
+├── infra/
+│   ├── database/migrations
+│   └── docker
+├── public/
+├── src/
+│   ├── client/
+│   │   ├── app
+│   │   ├── modules
+│   │   ├── shared
+│   │   └── widgets
+│   ├── server/
+│   │   ├── app
+│   │   ├── core
+│   │   └── modules
+│   └── shared/
+├── tests/
+└── tools/database
+```
+
+### Convenções
+
+- `src/client/app`: bootstrap, rotas, layout e estilos globais.
+- `src/client/modules`: código por domínio de negócio no frontend (`auth`, `home`, `orders`, `admin`, `catalog`).
+- `src/client/shared`: peças reutilizáveis de frontend sem regra de negócio.
+- `src/client/widgets`: blocos compostos de UI usados pela aplicação.
+- `src/server/app`: composição da aplicação e bootstrap da API.
+- `src/server/core`: infraestrutura transversal do backend (`config`, `database`, `http`, `middleware`).
+- `src/server/modules`: regras de negócio do backend separadas por módulo.
+- `src/shared`: contratos e utilitários compartilhados entre frontend e backend.
+- `infra`: arquivos operacionais do projeto, como Docker e migrations.
+- `tools`: scripts de manutenção e operação.
+
 ## Credenciais seed
 
 Ao rodar `npm run db:seed`, os usuários abaixo sao criados caso nao existam:
@@ -49,4 +85,4 @@ Ao rodar `npm run db:seed`, os usuários abaixo sao criados caso nao existam:
 - `OUT_FOR_DELIVERY`
 - `DELIVERED`
 
-O backend recalcula o total do pedido a partir do catalogo persistido e salva snapshot financeiro no pedido. O frontend so exibe previa.
+O backend recalcula o total do pedido a partir do catálogo persistido e salva snapshot financeiro no pedido. O frontend só exibe prévia.
