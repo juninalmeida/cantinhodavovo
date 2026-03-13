@@ -5,8 +5,6 @@ services:
       POSTGRES_DB: cantinhodavovo
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-    ports:
-      - '5432:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -21,6 +19,15 @@ services:
       dockerfile: infra/docker/api.Dockerfile
     env_file:
       - ../../.env
+    environment:
+      NODE_ENV: production
+      FRONTEND_URL: http://localhost:8080
+      CORS_ORIGIN: http://localhost:8080
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/cantinhodavovo
+    command:
+      - sh
+      - -c
+      - node dist-server/tools/database/migrate.js && node dist-server/tools/database/seed.js && node dist-server/server/app/index.js
     depends_on:
       postgres:
         condition: service_healthy
