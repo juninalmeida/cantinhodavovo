@@ -21,6 +21,7 @@
     "db:seed": "tsx tools/database/seed.ts",
     "admin:create": "tsx tools/database/create-admin.ts",
     "deploy:preflight": "npm run lint && npm run build && npm run test && npm run security:audit-history",
+    "deploy:check-env": "npm run build:api && node dist-server/tools/deploy/check-production-env.js",
     "secrets:generate": "npm run build:api && node dist-server/tools/deploy/generate-production-env.js",
     "security:audit-history": "npm run build:api && node dist-server/tools/security/audit-history.js",
     "docker:up": "docker compose -f infra/docker/docker-compose.yml up --build",

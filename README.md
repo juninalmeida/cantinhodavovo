@@ -43,11 +43,21 @@ URLs locais:
 - `npm run db:migrate`
 - `npm run db:seed`
 - `npm run admin:create`
+- `npm run deploy:check-env`
 - `npm run security:audit-history`
 
 ## Produção
 
 O deploy de produção foi preparado para rodar na Vercel, com banco PostgreSQL gerenciado e rate limit distribuído.
+
+Passos curtos:
+
+1. `npm run deploy:preflight`
+2. `npm run secrets:generate`
+3. usar [`.env.production.example`](./.env.production.example) como base para as variáveis da Vercel
+4. validar as variáveis com `npm run deploy:check-env`
+5. rodar `npm run db:migrate` apontando para o banco de produção
+6. rodar `npm run admin:create` para criar o primeiro admin
 
 ## Arquitetura
 
