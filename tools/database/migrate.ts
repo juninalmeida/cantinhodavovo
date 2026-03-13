@@ -1,7 +1,7 @@
 import { readdir, readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { Pool } from 'pg'
-import { env } from '../src/server/config/env.js'
+import { env } from '../../src/server/core/config/env.js'
 
 async function run() {
   const pool = new Pool({ connectionString: env.DATABASE_URL })
@@ -16,7 +16,7 @@ async function run() {
       )
     `)
 
-    const files = (await readdir(join(process.cwd(), 'database/migrations')))
+    const files = (await readdir(join(process.cwd(), 'infra/database/migrations')))
       .filter((file) => file.endsWith('.sql'))
       .sort()
 
@@ -27,7 +27,7 @@ async function run() {
         continue
       }
 
-      const sql = await readFile(join(process.cwd(), 'database/migrations', file), 'utf8')
+      const sql = await readFile(join(process.cwd(), 'infra/database/migrations', file), 'utf8')
 
       await client.query('BEGIN')
       await client.query(sql)
