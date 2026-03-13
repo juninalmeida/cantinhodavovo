@@ -16,6 +16,10 @@ dist-ssr
 coverage
 .playwright-cli
 output
+.vercel
+*.tsbuildinfo
+.eslintcache
+.cache/
 
 # Editor directories and files
 .vscode/*

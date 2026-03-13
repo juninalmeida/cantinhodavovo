@@ -1,88 +1,61 @@
-# Cantinho da Vovó SaaS Foundation
+# Cantinho da Vovó
 
-Base de um monólito modular para o Cantinho da Vovó, com:
+Aplicação de delivery construída como monólito modular com `React + Vite` no cliente e `Express + PostgreSQL` na API.
 
-- `React + Vite + TypeScript` no frontend
-- `Express + Node.js + TypeScript` na API
-- `PostgreSQL` como fonte autoritativa
-- `JWT access token + refresh token rotativo em cookie httpOnly`
-- `Zod` para validação de fronteira
-- `Jest + Supertest` para testes
-- `Docker Compose` para ambiente local
+O foco do projeto é mostrar organização de código, separação por domínio e um fluxo completo de pedidos com autenticação, área do cliente e área administrativa.
 
-## Requisitos
+## Stack
 
-- Node.js 24+
-- Docker e Docker Compose
+- `React + Vite + TypeScript`
+- `Express + Node.js + TypeScript`
+- `PostgreSQL`
+- `JWT em cookie httpOnly`
+- `Zod`
+- `Jest + Supertest`
 
-## Ambiente
+## Rodando localmente
 
-1. Copie `.env.example` para `.env`
-2. Ajuste os valores se necessário
+Pré-requisitos:
 
-## Scripts
+- `Node.js 24+`
+- `Docker`
 
-- `npm run dev`: sobe frontend e API em paralelo
-- `npm run dev:web`: sobe o frontend Vite
-- `npm run dev:api`: sobe a API Express com `tsx`
-- `npm run build`: builda frontend e backend
-- `npm run build:web`: build do frontend
-- `npm run build:api`: compilação do backend TypeScript
-- `npm run lint`: lint da base
-- `npm run test`: roda testes unitários e de integração
-- `npm run db:migrate`: aplica migrations SQL
-- `npm run db:seed`: cria usuários internos padrão
-- `npm run docker:up`: sobe `postgres`, `api` e `web`
+Suba o banco e a aplicação:
 
-## Estrutura do projeto
-
-```text
-.
-├── infra/
-│   ├── database/migrations
-│   └── docker
-├── public/
-├── src/
-│   ├── client/
-│   │   ├── app
-│   │   ├── modules
-│   │   ├── shared
-│   │   └── widgets
-│   ├── server/
-│   │   ├── app
-│   │   ├── core
-│   │   └── modules
-│   └── shared/
-├── tests/
-└── tools/database
+```bash
+npm install
+docker compose -f infra/docker/docker-compose.yml up -d postgres
+npm run db:migrate
+npm run dev
 ```
 
-### Convenções
+URLs locais:
 
-- `src/client/app`: bootstrap, rotas, layout e estilos globais.
-- `src/client/modules`: código por domínio de negócio no frontend (`auth`, `home`, `orders`, `admin`, `catalog`).
-- `src/client/shared`: peças reutilizáveis de frontend sem regra de negócio.
-- `src/client/widgets`: blocos compostos de UI usados pela aplicação.
-- `src/server/app`: composição da aplicação e bootstrap da API.
-- `src/server/core`: infraestrutura transversal do backend (`config`, `database`, `http`, `middleware`).
-- `src/server/modules`: regras de negócio do backend separadas por módulo.
-- `src/shared`: contratos e utilitários compartilhados entre frontend e backend.
-- `infra`: arquivos operacionais do projeto, como Docker e migrations.
-- `tools`: scripts de manutenção e operação.
+- Frontend: `http://localhost:5173`
+- API: `http://localhost:4000`
 
-## Credenciais seed
+## Scripts principais
 
-Ao rodar `npm run db:seed`, os usuários abaixo sao criados caso nao existam:
+- `npm run dev`
+- `npm run build`
+- `npm run lint`
+- `npm run test`
+- `npm run db:migrate`
+- `npm run db:seed`
+- `npm run admin:create`
+- `npm run security:audit-history`
 
-- Admin: `admin@cantinhodavovo.local` / `Admin@123`
-- Atendente: `atendente@cantinhodavovo.local` / `Atendente@123`
+## Produção
 
-## Fluxo do pedido
+O deploy de produção foi preparado para rodar na Vercel, com banco PostgreSQL gerenciado e rate limit distribuído.
 
-- `PENDING`
-- `PROCESSING`
-- `READY`
-- `OUT_FOR_DELIVERY`
-- `DELIVERED`
+## Arquitetura
 
-O backend recalcula o total do pedido a partir do catálogo persistido e salva snapshot financeiro no pedido. O frontend só exibe prévia.
+A visão geral da organização do projeto está em [`docs/architecture.md`](./docs/architecture.md).
+
+## Segurança
+
+- `.env` fica fora do repositório
+- não existem credenciais públicas de admin
+- `dangerouslySetInnerHTML` é bloqueado no lint
+- o histórico Git pode ser auditado com `npm run security:audit-history`
