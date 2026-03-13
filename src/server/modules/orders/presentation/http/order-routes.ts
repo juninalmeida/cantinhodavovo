@@ -4,7 +4,11 @@ import {
   customerModes,
   paymentMethods,
 } from '../../../../../shared/contracts/app.js'
+import { env } from '../../../../core/config/env.js'
 import { requireAuth, requireRole } from '../../../../core/middleware/auth.js'
+import { cookieNames, readCookieValue } from '../../../../core/security/cookies.js'
+import { createRateLimit } from '../../../../core/security/rate-limit.js'
+import { requireTurnstile } from '../../../../core/security/turnstile.js'
 import type { JwtService } from '../../../auth/infrastructure/token-service.js'
 import type { OrderService } from '../../application/order-service.js'
 
@@ -40,19 +44,47 @@ const updateStatusSchema = z.object({
   status: z.enum(['PROCESSING', 'READY', 'OUT_FOR_DELIVERY', 'DELIVERED']),
 })
 
+const createOrderRateLimit = createRateLimit({
+  bucket: 'orders:create',
+  windowMs: 15 * 60 * 1000,
+  limit: 20,
+  message: 'Muitos pedidos enviados em pouco tempo. Aguarde alguns minutos e tente novamente.',
+})
+
+const publicTrackingRateLimit = createRateLimit({
+  bucket: 'orders:tracking',
+  windowMs: 5 * 60 * 1000,
+  limit: env.NODE_ENV === 'development' ? 200 : 40,
+  message: 'Muitas consultas de acompanhamento em pouco tempo. Aguarde e tente novamente.',
+})
+
+const updateStatusRateLimit = createRateLimit({
+  bucket: 'orders:status',
+  windowMs: 60 * 1000,
+  limit: env.NODE_ENV === 'development' ? 240 : 90,
+  message: 'Muitas atualizacoes de status em pouco tempo. Aguarde e tente novamente.',
+})
+
+const trackingCodeSchema = z
+  .string()
+  .trim()
+  .toUpperCase()
+  .regex(/^CV-[A-Z0-9]{6,20}$/, 'Codigo de acompanhamento invalido.')
+
 export function createOrderRouter(orderService: OrderService, jwtService: JwtService) {
   const router = Router()
 
-  router.post('/', async (request, response) => {
+  router.post('/', createOrderRateLimit, requireTurnstile(), async (request, response) => {
     const input = createOrderSchema.parse(request.body)
-    const userToken = request.cookies?.cv_access_token
+    const userToken = readCookieValue(request.cookies, cookieNames.accessToken)
     const user = userToken ? jwtService.verifyAccessToken(userToken) : undefined
     const order = await orderService.createOrder(input, user)
     response.status(201).json({ order })
   })
 
-  router.get('/public/:trackingCode', async (request, response) => {
-    const trackingCode = Array.isArray(request.params.trackingCode) ? request.params.trackingCode[0] : request.params.trackingCode
+  router.get('/public/:trackingCode', publicTrackingRateLimit, async (request, response) => {
+    const rawTrackingCode = Array.isArray(request.params.trackingCode) ? request.params.trackingCode[0] : request.params.trackingCode
+    const trackingCode = trackingCodeSchema.parse(rawTrackingCode)
     const order = await orderService.getPublicOrderByTrackingCode(trackingCode)
     response.json({ order })
   })
@@ -65,6 +97,7 @@ export function createOrderRouter(orderService: OrderService, jwtService: JwtSer
 
   router.patch(
     '/:id/status',
+    updateStatusRateLimit,
     requireAuth(jwtService),
     requireRole(['ATTENDANT', 'ADMIN']),
     async (request, response) => {

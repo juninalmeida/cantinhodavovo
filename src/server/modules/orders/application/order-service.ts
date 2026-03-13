@@ -1,7 +1,9 @@
+import { randomBytes } from 'node:crypto'
 import type {
   AuthenticatedUser,
   CreateOrderInput,
   OrderDetail,
+  PublicOrderTracking,
   OrderStatus,
   OrderSummary,
 } from '../../../../shared/contracts/app.js'
@@ -96,14 +98,21 @@ export class OrderService {
     return order
   }
 
-  async getPublicOrderByTrackingCode(trackingCode: string): Promise<OrderDetail> {
-    const order = await this.orderRepository.findByTrackingCode(trackingCode)
+  async getPublicOrderByTrackingCode(trackingCode: string): Promise<PublicOrderTracking> {
+    const order = await this.orderRepository.findByTrackingCode(trackingCode.trim().toUpperCase())
 
     if (!order) {
       throw new AppError(404, 'Pedido não encontrado.')
     }
 
-    return order
+    return {
+      trackingCode: order.trackingCode,
+      status: order.status,
+      createdAt: order.createdAt,
+      total: order.total,
+      customerName: order.customerName.split(' ')[0] ?? 'Cliente',
+      history: order.history,
+    }
   }
 
   async listOwnOrders(userId: string): Promise<OrderSummary[]> {
@@ -151,7 +160,7 @@ export class OrderService {
   }
 
   private generateTrackingCode(): string {
-    const token = Math.random().toString(36).slice(2, 8).toUpperCase()
+    const token = randomBytes(6).toString('hex').toUpperCase()
     return `CV-${token}`
   }
 }

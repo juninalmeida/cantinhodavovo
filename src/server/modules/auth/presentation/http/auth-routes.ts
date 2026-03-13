@@ -1,9 +1,17 @@
 import { Router } from 'express'
 import type { Response } from 'express'
-import rateLimit from 'express-rate-limit'
 import { z } from 'zod'
 import { AppError } from '../../../../core/http/app-error.js'
 import { env } from '../../../../core/config/env.js'
+import { createRateLimit } from '../../../../core/security/rate-limit.js'
+import { clearCsrfToken, csrfTokenHandler } from '../../../../core/security/csrf.js'
+import {
+  buildSessionCookieOptions,
+  clearCookie,
+  cookieNames,
+  readCookieValue,
+} from '../../../../core/security/cookies.js'
+import { requireTurnstile } from '../../../../core/security/turnstile.js'
 import type { AuthService } from '../../application/auth-service.js'
 import type { AuthSession } from '../../domain/auth-types.js'
 
@@ -23,31 +31,32 @@ const registerSchema = z.object({
 })
 
 const loginSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(8),
+  email: z.string().trim().email(),
+  password: z.string().min(8).max(128),
 })
 
-const authAttemptRateLimit = rateLimit({
+const loginRateLimit = createRateLimit({
+  bucket: 'auth:login',
   windowMs: 15 * 60 * 1000,
   limit: env.NODE_ENV === 'development' ? 100 : 20,
-  standardHeaders: true,
-  legacyHeaders: false,
-  handler: (_request, response) => {
-    response.status(429).json({
-      message: 'Muitas tentativas de autenticacao. Aguarde alguns minutos e tente novamente.',
-    })
-  },
+  message: 'Muitas tentativas de autenticacao. Aguarde alguns minutos e tente novamente.',
+  keyGenerator: (request) => String(request.body?.email ?? 'anonymous'),
 })
 
-function buildCookieOptions(maxAge: number) {
-  return {
-    httpOnly: true,
-    sameSite: 'lax' as const,
-    secure: env.COOKIE_SECURE,
-    maxAge,
-    path: '/',
-  }
-}
+const registerRateLimit = createRateLimit({
+  bucket: 'auth:register',
+  windowMs: 30 * 60 * 1000,
+  limit: env.NODE_ENV === 'development' ? 50 : 10,
+  message: 'Muitos cadastros enviados em pouco tempo. Aguarde alguns minutos e tente novamente.',
+  keyGenerator: (request) => String(request.body?.email ?? 'anonymous'),
+})
+
+const refreshRateLimit = createRateLimit({
+  bucket: 'auth:refresh',
+  windowMs: 10 * 60 * 1000,
+  limit: env.NODE_ENV === 'development' ? 120 : 30,
+  message: 'Muitas atualizacoes de sessao em pouco tempo. Tente novamente em instantes.',
+})
 
 interface SessionRestoreResult {
   session: AuthSession | null
@@ -56,10 +65,10 @@ interface SessionRestoreResult {
 
 export async function restoreSessionFromCookies(
   authService: AuthService,
-  cookies: { cv_access_token?: string; cv_refresh_token?: string } | undefined,
+  cookies: Record<string, unknown> | undefined,
 ): Promise<SessionRestoreResult> {
-  const accessToken = cookies?.cv_access_token
-  const refreshToken = cookies?.cv_refresh_token
+  const accessToken = readCookieValue(cookies, cookieNames.accessToken)
+  const refreshToken = readCookieValue(cookies, cookieNames.refreshToken)
 
   if (accessToken) {
     try {
@@ -93,41 +102,48 @@ export function createAuthRouter(authService: AuthService) {
   const accessCookieMaxAge = env.ACCESS_TOKEN_TTL_MINUTES * 60 * 1000
   const refreshCookieMaxAge = env.REFRESH_TOKEN_TTL_DAYS * 24 * 60 * 60 * 1000
 
+  const clearSessionTokens = (response: Response) => {
+    clearCookie(response, cookieNames.accessToken, accessCookieMaxAge)
+    clearCookie(response, cookieNames.refreshToken, refreshCookieMaxAge)
+  }
+
   const clearSession = (response: Response) => {
-    response.clearCookie('cv_access_token', buildCookieOptions(accessCookieMaxAge))
-    response.clearCookie('cv_refresh_token', buildCookieOptions(refreshCookieMaxAge))
+    clearSessionTokens(response)
+    clearCsrfToken(response)
   }
 
   const writeSession = (response: Response, session: Awaited<ReturnType<AuthService['login']>>) => {
-    response.cookie('cv_access_token', session.accessToken, buildCookieOptions(accessCookieMaxAge))
-    response.cookie('cv_refresh_token', session.refreshToken, buildCookieOptions(refreshCookieMaxAge))
+    response.cookie(cookieNames.accessToken, session.accessToken, buildSessionCookieOptions(accessCookieMaxAge))
+    response.cookie(cookieNames.refreshToken, session.refreshToken, buildSessionCookieOptions(refreshCookieMaxAge))
     response.status(200).json({ user: session.user, defaultAddress: session.defaultAddress ?? null })
   }
 
   const writeUnauthenticated = (response: Response) => {
-    clearSession(response)
+    clearSessionTokens(response)
     response.status(200).json({ user: null, defaultAddress: null })
   }
 
-  router.post('/register', authAttemptRateLimit, async (request, response) => {
+  router.get('/csrf', csrfTokenHandler)
+
+  router.post('/register', registerRateLimit, requireTurnstile(), async (request, response) => {
     const input = registerSchema.parse(request.body)
     const session = await authService.register(input)
     writeSession(response, session)
   })
 
-  router.post('/login', authAttemptRateLimit, async (request, response) => {
+  router.post('/login', loginRateLimit, requireTurnstile(), async (request, response) => {
     const input = loginSchema.parse(request.body)
     const session = await authService.login(input)
     writeSession(response, session)
   })
 
-  router.post('/refresh', async (request, response) => {
-    const session = await authService.refresh(request.cookies?.cv_refresh_token)
+  router.post('/refresh', refreshRateLimit, async (request, response) => {
+    const session = await authService.refresh(readCookieValue(request.cookies, cookieNames.refreshToken))
     writeSession(response, session)
   })
 
-  router.post('/logout', async (request, response) => {
-    await authService.logout(request.cookies?.cv_refresh_token)
+  router.post('/logout', refreshRateLimit, async (request, response) => {
+    await authService.logout(readCookieValue(request.cookies, cookieNames.refreshToken))
     clearSession(response)
     response.status(204).send()
   })

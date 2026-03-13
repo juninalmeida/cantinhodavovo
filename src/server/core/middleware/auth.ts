@@ -1,11 +1,12 @@
 import type { NextFunction, Request, Response } from 'express'
 import type { UserRole } from '../../../shared/contracts/app.js'
 import { AppError } from '../http/app-error.js'
+import { cookieNames, readCookieValue } from '../security/cookies.js'
 import type { JwtService } from '../../modules/auth/infrastructure/token-service.js'
 
 export function requireAuth(jwtService: JwtService) {
   return (request: Request, _response: Response, next: NextFunction) => {
-    const token = request.cookies?.cv_access_token
+    const token = readCookieValue(request.cookies, cookieNames.accessToken)
 
     if (!token) {
       next(new AppError(401, 'Autenticacao obrigatoria.'))

@@ -10,6 +10,7 @@ import { createOrderRouter } from '../modules/orders/presentation/http/order-rou
 import { env } from '../core/config/env.js'
 import { requireAuth, requireRole } from '../core/middleware/auth.js'
 import { errorHandler } from '../core/middleware/error-handler.js'
+import { requireCsrfProtection } from '../core/security/csrf.js'
 import { buildAppServices, type AppServices } from './build-services.js'
 
 const loopbackHosts = ['localhost', '127.0.0.1', '[::1]'] as const
@@ -78,7 +79,10 @@ export function ensureCorsOriginAllowed(origin: string | undefined, allowedOrigi
 
 export function createApp(services: AppServices = buildAppServices()) {
   const app = express()
-  const allowedOrigins = buildAllowedOrigins([env.FRONTEND_URL, env.CORS_ORIGIN], env.NODE_ENV)
+  const allowedOrigins = buildAllowedOrigins([env.APP_ORIGIN, env.FRONTEND_URL, env.CORS_ORIGIN], env.NODE_ENV)
+
+  app.disable('x-powered-by')
+  app.set('trust proxy', 1)
 
   app.use(
     cors({
@@ -95,13 +99,18 @@ export function createApp(services: AppServices = buildAppServices()) {
   )
   app.use(
     helmet({
+      contentSecurityPolicy: false,
       crossOriginResourcePolicy: false,
     }),
   )
-  app.use(express.json())
+  app.use(express.json({ limit: '32kb' }))
   app.use(cookieParser())
+  app.use(requireCsrfProtection(allowedOrigins))
 
   app.get('/health', (_request, response) => {
+    response.json({ status: 'ok' })
+  })
+  app.get('/api/health', (_request, response) => {
     response.json({ status: 'ok' })
   })
 

@@ -20,8 +20,8 @@ services:
     env_file:
       - ../../.env
     environment:
-      NODE_ENV: production
-      FRONTEND_URL: http://localhost:8080
+      NODE_ENV: development
+      APP_ORIGIN: http://localhost:8080
       CORS_ORIGIN: http://localhost:8080
       DATABASE_URL: postgres://postgres:postgres@postgres:5432/cantinhodavovo
     command:

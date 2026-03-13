@@ -24,6 +24,7 @@ export type ComboGroup = (typeof comboGroups)[number]
 
 export interface ApiErrorPayload {
   message: string
+  code?: string
 }
 
 export interface AuthenticatedUser {
@@ -116,6 +117,15 @@ export interface OrderStatusHistoryEntry {
   toStatus: OrderStatus
   changedAt: string
   changedByName: string | null
+}
+
+export interface PublicOrderTracking {
+  trackingCode: string
+  status: OrderStatus
+  createdAt: string
+  total: number
+  customerName: string
+  history: OrderStatusHistoryEntry[]
 }
 
 export interface OrderSummary {
