@@ -64,6 +64,8 @@ const checks: PatternCheck[] = [
   },
 ]
 
+const ignoredPathspecs = ['--', ':!tools/security/audit-history.ts']
+
 function runGit(args: string[]) {
   return execFileSync('git', args, {
     encoding: 'utf8',
@@ -74,7 +76,7 @@ function runGit(args: string[]) {
 
 function safeGitGrep(pattern: string, revisions: string[]) {
   try {
-    const output = runGit(['grep', '-n', '-I', '-E', pattern, ...revisions])
+    const output = runGit(['grep', '-n', '-I', '-E', pattern, ...revisions, ...ignoredPathspecs])
     return output ? output.split('\n').filter(Boolean) : []
   } catch (error) {
     const message = error instanceof Error ? error.message : ''
