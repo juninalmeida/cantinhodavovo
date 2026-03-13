@@ -11,5 +11,5 @@ ENV NODE_ENV=production
 COPY package*.json ./
 RUN npm install --omit=dev
 COPY --from=builder /app/dist-server ./dist-server
-COPY --from=builder /app/database ./database
-CMD ["node", "dist-server/server/index.js"]
+COPY --from=builder /app/infra/database ./infra/database
+CMD ["node", "dist-server/server/app/index.js"]

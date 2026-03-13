@@ -17,10 +17,10 @@ services:
 
   api:
     build:
-      context: .
-      dockerfile: Dockerfile.api
+      context: ../..
+      dockerfile: infra/docker/api.Dockerfile
     env_file:
-      - .env
+      - ../../.env
     depends_on:
       postgres:
         condition: service_healthy
@@ -29,8 +29,8 @@ services:
 
   web:
     build:
-      context: .
-      dockerfile: Dockerfile.web
+      context: ../..
+      dockerfile: infra/docker/web.Dockerfile
     depends_on:
       - api
     ports:
