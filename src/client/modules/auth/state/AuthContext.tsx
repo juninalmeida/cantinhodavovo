@@ -7,8 +7,15 @@ interface AuthContextValue {
   user: AuthenticatedUser | null
   defaultAddress: Address | null
   loading: boolean
-  login: (input: { email: string; password: string }) => Promise<AuthenticatedUser>
-  register: (input: { name: string; email: string; phone?: string; password: string; defaultAddress: DeliveryAddressInput }) => Promise<AuthenticatedUser>
+  login: (input: { email: string; password: string; turnstileToken?: string }) => Promise<AuthenticatedUser>
+  register: (input: {
+    name: string
+    email: string
+    phone?: string
+    password: string
+    defaultAddress: DeliveryAddressInput
+    turnstileToken?: string
+  }) => Promise<AuthenticatedUser>
   logout: () => Promise<void>
 }
 

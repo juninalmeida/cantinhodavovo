@@ -4,6 +4,7 @@ import type { UserRole } from '@shared/contracts/app'
 import { Icon } from '@client/shared/icons'
 import { useAuth } from '@client/modules/auth/hooks/useAuth'
 import { HttpError } from '@client/shared/api'
+import { TurnstileWidget } from '@client/shared/security/TurnstileWidget'
 
 function getDefaultRouteForRole(role: UserRole): string {
   if (role === 'ADMIN') return '/area-admin'
@@ -17,18 +18,30 @@ export function LoginPage() {
   const location = useLocation()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null)
+  const [turnstileResetKey, setTurnstileResetKey] = useState(0)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const requiresChallenge = Boolean(import.meta.env.VITE_TURNSTILE_SITE_KEY)
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setLoading(true)
     setError(null)
 
+    if (requiresChallenge && !turnstileToken) {
+      setLoading(false)
+      setError('Confirme a verificacao anti-bot antes de entrar.')
+      return
+    }
+
     try {
-      const loggedUser = await login({ email, password })
+      const loggedUser = await login({ email, password, turnstileToken: turnstileToken ?? undefined })
       navigate((location.state as { from?: string } | null)?.from ?? getDefaultRouteForRole(loggedUser.role))
     } catch (submitError) {
+      setTurnstileToken(null)
+      setTurnstileResetKey((current) => current + 1)
+
       if (submitError instanceof HttpError && submitError.status === 401) {
         setError('E-mail ou senha inválidos.')
       } else if (submitError instanceof HttpError && submitError.status >= 500) {
@@ -85,9 +98,14 @@ export function LoginPage() {
                 <input className="input mt-2" type="password" value={password} onChange={(event) => setPassword(event.target.value)} />
               </label>
 
+              <TurnstileWidget onTokenChange={setTurnstileToken} resetKey={turnstileResetKey} />
+              {requiresChallenge && !turnstileToken && (
+                <p className="text-xs text-cafe/55">A verificacao anti-bot precisa ser concluida para liberar o acesso.</p>
+              )}
+
               {error && <p className="rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
 
-              <button className="button-primary w-full" disabled={loading} type="submit">
+              <button className="button-primary w-full" disabled={loading || (requiresChallenge && !turnstileToken)} type="submit">
                 {loading ? 'Entrando...' : 'Entrar'}
               </button>
             </form>

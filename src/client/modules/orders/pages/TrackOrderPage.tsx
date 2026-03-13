@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import type { OrderDetail } from '@shared/contracts/app'
+import type { PublicOrderTracking } from '@shared/contracts/app'
 import { formatCurrency } from '@shared/utils/money'
 import { ordersApi, OrderTimeline, StatusBadge } from '@client/modules/orders'
 import { Panel } from '@client/shared/ui'
@@ -9,7 +9,7 @@ export function TrackOrderPage() {
   const navigate = useNavigate()
   const { codigo = '' } = useParams()
   const [trackingCode, setTrackingCode] = useState(codigo)
-  const [order, setOrder] = useState<OrderDetail | null>(null)
+  const [order, setOrder] = useState<PublicOrderTracking | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [refreshError, setRefreshError] = useState<string | null>(null)
   const [lastUpdatedAt, setLastUpdatedAt] = useState<string | null>(null)

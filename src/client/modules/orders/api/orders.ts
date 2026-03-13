@@ -1,18 +1,19 @@
-import type { AdminDashboardMetrics, AdminOrderFilters, AdminOrderSummary, AdminUserSummary, CreateOrderInput, OrderDetail, OrderStatus, OrderSummary } from '@shared/contracts/app'
+import type { AdminDashboardMetrics, AdminOrderFilters, AdminOrderSummary, AdminUserSummary, CreateOrderInput, OrderDetail, OrderStatus, OrderSummary, PublicOrderTracking } from '@shared/contracts/app'
 import { request } from '@client/shared/api'
 
 export const ordersApi = {
-  createOrder(input: CreateOrderInput) {
+  createOrder(input: CreateOrderInput, turnstileToken?: string) {
     return request<{ order: OrderDetail }>('/api/orders', {
       method: 'POST',
       body: input,
+      turnstileToken,
     })
   },
   getOrder(id: string) {
     return request<{ order: OrderDetail }>(`/api/orders/${id}`)
   },
   getPublicOrder(trackingCode: string) {
-    return request<{ order: OrderDetail }>(`/api/orders/public/${trackingCode}`)
+    return request<{ order: PublicOrderTracking }>(`/api/orders/public/${trackingCode}`)
   },
   getMyOrders() {
     return request<{ orders: OrderSummary[] }>('/api/me/orders')

@@ -1,5 +1,7 @@
 import { OrderService } from '../../dist-server/server/modules/orders/application/order-service.js'
 
+let lastCreatedOrderInput = null
+
 const catalogRepository = {
   async listActiveProducts() {
     return []
@@ -32,7 +34,7 @@ const createdOrder = {
   discount: 0,
   changeFor: null,
   paymentMethod: 'PIX',
-  customerName: 'Cliente',
+  customerName: 'Maria Silva',
   deliveryAddress: {
     street: 'Rua A',
     number: '10',
@@ -56,8 +58,12 @@ const createdOrder = {
 }
 
 const orderRepository = {
-  async createOrder() {
-    return createdOrder
+  async createOrder(input) {
+    lastCreatedOrderInput = input
+    return {
+      ...createdOrder,
+      trackingCode: input.trackingCode,
+    }
   },
   async findById() {
     return createdOrder
@@ -158,5 +164,48 @@ describe('OrderService validation', () => {
         },
       ),
     ).rejects.toMatchObject({ statusCode: 400 })
+  })
+
+  it('generates opaque tracking codes for newly created orders', async () => {
+    const service = new OrderService(catalogRepository, orderRepository, auditLogs)
+
+    await service.createOrder(
+      {
+        customerMode: 'AUTHENTICATED',
+        items: [{ productId: 'coxinha-vovo', quantity: 1 }],
+        deliveryAddress: {
+          street: 'Rua A',
+          number: '10',
+          neighborhood: 'Centro',
+          city: 'Maceio',
+          state: 'AL',
+        },
+        paymentMethod: 'PIX',
+      },
+      {
+        id: 'user-1',
+        name: 'Cliente',
+        email: 'cliente@test.dev',
+        phone: null,
+        role: 'CUSTOMER',
+      },
+    )
+
+    expect(lastCreatedOrderInput.trackingCode).toMatch(/^CV-[A-F0-9]{12}$/)
+  })
+
+  it('returns a masked public payload for tracking lookups', async () => {
+    const service = new OrderService(catalogRepository, orderRepository, auditLogs)
+
+    const result = await service.getPublicOrderByTrackingCode('cv-abc123')
+
+    expect(result).toEqual({
+      trackingCode: createdOrder.trackingCode,
+      status: createdOrder.status,
+      createdAt: createdOrder.createdAt,
+      total: createdOrder.total,
+      customerName: 'Maria',
+      history: createdOrder.history,
+    })
   })
 })

@@ -12,11 +12,21 @@ interface SessionStateResponse {
 }
 
 export const authApi = {
-  login(input: { email: string; password: string }) {
-    return request<SessionResponse>('/api/auth/login', { method: 'POST', body: input })
+  login(input: { email: string; password: string; turnstileToken?: string }) {
+    const { turnstileToken, ...body } = input
+    return request<SessionResponse>('/api/auth/login', {
+      method: 'POST',
+      body,
+      turnstileToken,
+    })
   },
-  register(input: { name: string; email: string; phone?: string; password: string; defaultAddress: DeliveryAddressInput }) {
-    return request<SessionResponse>('/api/auth/register', { method: 'POST', body: input })
+  register(input: { name: string; email: string; phone?: string; password: string; defaultAddress: DeliveryAddressInput; turnstileToken?: string }) {
+    const { turnstileToken, ...body } = input
+    return request<SessionResponse>('/api/auth/register', {
+      method: 'POST',
+      body,
+      turnstileToken,
+    })
   },
   refresh() {
     return request<SessionResponse>('/api/auth/refresh', { method: 'POST' })

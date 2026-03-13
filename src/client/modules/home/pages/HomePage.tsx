@@ -10,6 +10,7 @@ import { ordersApi } from '@client/modules/orders'
 import { ComboOrderTicket } from '@client/modules/home/ui/ComboOrderTicket'
 import { HeroSection } from '@client/modules/home/ui/HeroSection'
 import { Icon } from '@client/shared/icons'
+import { TurnstileWidget } from '@client/shared/security/TurnstileWidget'
 import { MenuSection } from '@client/modules/home/ui/MenuSection'
 import { decorateComboOption } from '@client/modules/home/model/comboVisuals'
 
@@ -47,10 +48,13 @@ export function HomePage() {
   const [comboError, setComboError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null)
+  const [turnstileResetKey, setTurnstileResetKey] = useState(0)
   const [useSavedAddress, setUseSavedAddress] = useState(true)
   const [isOrderConfirmed, setIsOrderConfirmed] = useState(false)
   const [ticketPinned, setTicketPinned] = useState(false)
   const [ticketMotionY, setTicketMotionY] = useState(0)
+  const requiresChallenge = Boolean(import.meta.env.VITE_TURNSTILE_SITE_KEY)
   const ticketStickyAnchorRef = useRef<HTMLDivElement | null>(null)
   const ticketCardRef = useRef<HTMLDivElement | null>(null)
   const comboSectionRef = useRef<HTMLElement | null>(null)
@@ -204,6 +208,12 @@ export function HomePage() {
     setSubmitting(true)
     setMessage(null)
 
+    if (requiresChallenge && !turnstileToken) {
+      setSubmitting(false)
+      setMessage('Confirme a verificacao anti-bot antes de enviar o pedido.')
+      return
+    }
+
     if (!isOrderConfirmed) {
       setSubmitting(false)
       setMessage('Confirme primeiro que esse é o pedido que você quer.')
@@ -255,7 +265,7 @@ export function HomePage() {
     }
 
     try {
-      const { order } = await ordersApi.createOrder(input)
+      const { order } = await ordersApi.createOrder(input, turnstileToken ?? undefined)
       setMessage(`Pedido criado com sucesso. Código de acompanhamento: ${order.trackingCode}`)
 
       if (user) {
@@ -266,6 +276,8 @@ export function HomePage() {
         navigate(`/acompanhar/${order.trackingCode}`)
       }
     } catch (error) {
+      setTurnstileToken(null)
+      setTurnstileResetKey((current) => current + 1)
       setMessage(error instanceof Error ? error.message : 'Não foi possível criar o pedido.')
     } finally {
       setSubmitting(false)
@@ -585,8 +597,15 @@ export function HomePage() {
                       </div>
                     </fieldset>
 
+                    <div className="space-y-3">
+                      <TurnstileWidget onTokenChange={setTurnstileToken} resetKey={turnstileResetKey} />
+                      {requiresChallenge && !turnstileToken && (
+                        <p className="text-xs text-cafe/55">A verificacao anti-bot precisa ser concluida antes do envio do pedido.</p>
+                      )}
+                    </div>
+
                     <div className="flex justify-end">
-                      <button className="button-primary min-w-[240px]" disabled={submitting} type="submit">
+                      <button className="button-primary min-w-[240px]" disabled={submitting || (requiresChallenge && !turnstileToken)} type="submit">
                         {submitting ? 'Enviando pedido...' : 'Confirmar pedido'}
                       </button>
                     </div>

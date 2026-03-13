@@ -1,5 +1,6 @@
 process.env.NODE_ENV = 'test'
 process.env.PORT = '4000'
+process.env.APP_ORIGIN = 'http://localhost:5173'
 process.env.FRONTEND_URL = 'http://localhost:5173'
 process.env.CORS_ORIGIN = 'http://localhost:5173'
 process.env.DATABASE_URL = 'postgres://postgres:postgres@localhost:5432/cantinhodavovo_test'

@@ -2,10 +2,13 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Icon } from '@client/shared/icons'
 import { useAuth } from '@client/modules/auth/hooks/useAuth'
+import { TurnstileWidget } from '@client/shared/security/TurnstileWidget'
 
 export function RegisterPage() {
   const { register } = useAuth()
   const navigate = useNavigate()
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null)
+  const [turnstileResetKey, setTurnstileResetKey] = useState(0)
   const [form, setForm] = useState({
     name: '',
     email: '',
@@ -20,11 +23,18 @@ export function RegisterPage() {
   })
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const requiresChallenge = Boolean(import.meta.env.VITE_TURNSTILE_SITE_KEY)
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setLoading(true)
     setError(null)
+
+    if (requiresChallenge && !turnstileToken) {
+      setLoading(false)
+      setError('Confirme a verificacao anti-bot antes de criar a conta.')
+      return
+    }
 
     try {
       await register({
@@ -40,9 +50,13 @@ export function RegisterPage() {
           state: form.state,
           reference: form.reference || undefined,
         },
+        turnstileToken: turnstileToken ?? undefined,
       })
       navigate('/area-cliente')
     } catch (submitError: any) {
+      setTurnstileToken(null)
+      setTurnstileResetKey((current) => current + 1)
+
       if (submitError.status >= 400 && submitError.status < 500 && submitError.message) {
         setError(submitError.message)
       } else {
@@ -135,9 +149,14 @@ export function RegisterPage() {
                 </div>
               </div>
 
+              <TurnstileWidget onTokenChange={setTurnstileToken} resetKey={turnstileResetKey} />
+              {requiresChallenge && !turnstileToken && (
+                <p className="text-xs text-cafe/55">A verificacao anti-bot precisa ser concluida para liberar o cadastro.</p>
+              )}
+
               {error && <p className="rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
 
-              <button className="button-primary w-full" disabled={loading} type="submit">
+              <button className="button-primary w-full" disabled={loading || (requiresChallenge && !turnstileToken)} type="submit">
                 {loading ? 'Criando conta...' : 'Criar conta'}
               </button>
             </form>
