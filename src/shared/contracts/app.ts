@@ -128,6 +128,21 @@ export interface OrderSummary {
   customerName: string
 }
 
+export interface AdminOrderSummary extends OrderSummary {
+  customerMode: CustomerMode
+  updatedAt: string
+}
+
+export interface AdminUserSummary {
+  id: string
+  name: string
+  email: string
+  phone: string | null
+  role: UserRole
+  createdAt: string
+  hasDefaultAddress: boolean
+}
+
 export interface OrderDetail extends OrderSummary {
   subtotal: number
   deliveryFee: number
@@ -144,4 +159,22 @@ export interface OrderMetrics {
   pendingOrders: number
   deliveredOrders: number
   totalRevenue: number
+}
+
+export interface AdminDashboardMetrics extends OrderMetrics {
+  processingOrders: number
+  readyOrders: number
+  outForDeliveryOrders: number
+  revenueToday: number
+  averageTicket: number
+  customerCount: number
+  ordersToday: number
+}
+
+export interface AdminOrderFilters {
+  status?: OrderStatus
+  customerMode?: CustomerMode
+  search?: string
+  dateFrom?: string
+  dateTo?: string
 }
