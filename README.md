@@ -1,71 +1,96 @@
-# Cantinho da Vovó
+# Cantinho da VóVó
 
-Aplicação de delivery construída como monólito modular com `React + Vite` no cliente e `Express + PostgreSQL` na API.
+**Plataforma de delivery online com gestão de combos integrados**
 
-O foco do projeto é mostrar organização de código, separação por domínio e um fluxo completo de pedidos com autenticação, área do cliente e área administrativa.
+![CI](https://github.com/juninalmeida/cantinhodavovo/actions/workflows/ci.yml/badge.svg) ![React](https://img.shields.io/badge/React-19-blue) ![Node](https://img.shields.io/badge/Node-24-green) ![Vercel](https://img.shields.io/badge/Vercel-Deployed-black)
 
-## Stack
+[Demo (Vercel)](https://cantinhodavovo.vercel.app/) [Issues](https://github.com/juninalmeida/cantinhodavovo/issues) • [Actions](https://github.com/juninalmeida/cantinhodavovo/actions)
 
-- `React + Vite + TypeScript`
-- `Express + Node.js + TypeScript`
-- `PostgreSQL`
-- `JWT em cookie httpOnly`
-- `Zod`
-- `Jest + Supertest`
+## 📌 Visão Geral
 
-## Rodando localmente
+- **Problema:** Negócios locais de alimentação principalmente em interior de capitais sofrem com o abismo de criatividade na criação de combos e pedidos via mensagens desestruturadas e gargalos no atendimento.
+- **Solução:** Um sistema E-commerce de cardápio digital rápido e autônomo, focado na fácil escolha de combos e proteção anti-bot, com inovação onde o cliente pode montar o próprio sabor com as massas disponíveis.
+- **Destaques técnicos:**
+  - Fullstack deployment no ambiente serverless (Vercel) com funções segmentadas (Optional Catch-All pattern).
+  - Controle de rate limit e middleware de segurança Turnstile em endpoints críticos.
+  - Testes automatizados rodando em CI no GitHub Actions.
+  - Banco de dados relacional PostgreSQL gerido localmente via neon.tech em produção.
 
-Pré-requisitos:
+## 🚀 Demo
 
-- `Node.js 24+`
-- `Docker`
+[Acessar Aplicação ->](https://cantinhodavovo.vercel.app/)
 
-Suba o banco e a aplicação:
+## 🛠 Funcionalidades
 
-```bash
-npm install
-docker compose -f infra/docker/docker-compose.yml up -d postgres
-npm run db:migrate
-npm run dev
-```
+- **Core:**
+  - Navegação fluida no catálogo de produtos e exibição dinâmica de combos personalizados.
+  - Carrinho de compras persistente e checkout otimizado (Guest ou Autenticado).
+  - Autenticação JWT completa com Access/Refresh Tokens via cookies `HttpOnly`.
+  - Painel Admin para gerenciamento unificado de pedidos.
+- **Validações & UX:**
+  - Feedback visual imediato usando interceptadores HTTP otimizados.
+  - Proteção robusta contra CSRF tokens e validações de input estritas pelo backend (Zod).
+  - Captcha integrado Invisível (Cloudflare Turnstile) no fechamento de pedidos e login.
 
-URLs locais:
+## 🏗 Arquitetura & Decisões
 
-- Frontend: `http://localhost:5173`
-- API: `http://localhost:4000`
+- **Integração Vercel via Express:** Ao invés do Next.js padrão, adaptei um servidor Express vanilla `.ts` encapsulado num fallback `/api/index.ts` com Vercel rewrites para superar limites do plano "Hobby" e economizar custos.
+- **Cookies `__Host-` em Produção:** Garantem mitigação superior contra sequestro de sessão em ambientes https, tornando impossível spoofing através de subdomínios.
+- **State Management:** (Zustand + React)
+  _Store do Carrinho e Usuário persistem → Componentes reativos (UI) → HTTP Client dispara mutações._
 
-## Scripts principais
+## 🧪 Qualidade & CI/CD
 
-- `npm run dev`
-- `npm run build`
-- `npm run lint`
-- `npm run test`
-- `npm run db:migrate`
-- `npm run db:seed`
-- `npm run admin:create`
-- `npm run deploy:check-env`
-- `npm run security:audit-history`
+- **Lint:** `npm run lint` (ESLint strict config)
+- **Testes:** `npm run test` (Jest sobre o build da API)
+- **CodeQL Security:** Implementado no GitHub workflow para varreduras SAST de segurança.
+- A **GitHub Action** garante que nenhum merge aconteça sem passar pelo Lint, Build e CodeQL (`ci.yml`).
 
-## Produção
+## 💻 Como rodar localmente
 
-O deploy de produção foi preparado para rodar na Vercel, com banco PostgreSQL gerenciado e rate limit distribuído.
+**Requisitos:** Node 24.x, Docker
 
-Passos curtos:
+1. **Clone & Install**
 
-1. `npm run deploy:preflight`
-2. `npm run secrets:generate`
-3. usar [`.env.production.example`](./.env.production.example) como base para as variáveis da Vercel
-4. validar as variáveis com `npm run deploy:check-env`
-5. rodar `npm run db:migrate` apontando para o banco de produção
-6. rodar `npm run admin:create` para criar o primeiro admin
+   ```bash
+   git clone https://github.com/juninalmeida/cantinhodavovo.git
+   cd cantinhodavovo
+   npm install
+   ```
 
-## Arquitetura
+2. **Banco de Dados (Docker)**
 
-A visão geral da organização do projeto está em [`docs/architecture.md`](./docs/architecture.md).
+   ```bash
+   npm run docker:up
+   ```
 
-## Segurança
+3. **Ambiente & Seeds**
+   Crie seu `.env` com base no `.env.example` (certifique-se de configurar _DATABASE_URL_, e as chaves _TURNSTILE_).
 
-- `.env` fica fora do repositório
-- não existem credenciais públicas de admin
-- `dangerouslySetInnerHTML` é bloqueado no lint
-- o histórico Git pode ser auditado com `npm run security:audit-history`
+   ```bash
+   npm run db:migrate
+   npm run db:seed
+   ```
+
+   _(Para painel de Admin, crie-o: `npm run admin:create` informando email/senha no .env)._
+
+4. **Rodar Aplicação (Frontend e Backend juntos)**
+   ```bash
+   npm run dev
+   ```
+   _Acesse http://localhost:5173_
+
+## 📁 Estrutura do Projeto
+
+- `/src/client` → Web App em React. Vite config, estilos globais e chamadas http.
+- `/src/server` → Core do backend Express. Dividido em módulos DDD (auth, catalog, orders).
+- `/api` → Entrypoint Serverless para Vercel.
+- `/infra` → Configurações do Docker e Banco de Dados.
+
+## 👨‍💻 Autor
+
+### Horacio Junior
+
+- 💼 [LinkedIn](https://www.linkedin.com/in/j%C3%BAnior-almeida-3563a934b/)
+- 💻 [GitHub](https://github.com/juninalmeida)
+- ✉️ [Email](mailto:junioralmeidati2023@gmail.com)
