@@ -2,6 +2,7 @@ import cookieParser from 'cookie-parser'
 import cors from 'cors'
 import express from 'express'
 import helmet from 'helmet'
+import type { RequestHandler } from 'express'
 import { AppError } from '../core/http/app-error.js'
 import { createCatalogRouter } from '../modules/catalog/presentation/http/catalog-routes.js'
 import { createAdminRouter } from '../modules/admin/presentation/http/admin-routes.js'
@@ -49,6 +50,27 @@ function addLoopbackAliases(originSet: Set<string>, value: string) {
       viteVariant.port = port
       addOrigin(originSet, viteVariant.origin)
     }
+  }
+}
+
+function withApiAliases(path: string) {
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`
+  const withoutApiPrefix = normalizedPath.startsWith('/api/')
+    ? normalizedPath.replace(/^\/api/, '')
+    : normalizedPath
+
+  return [...new Set([normalizedPath, withoutApiPrefix])]
+}
+
+function useWithApiAliases(app: express.Express, path: string, router: express.Router) {
+  for (const alias of withApiAliases(path)) {
+    app.use(alias, router)
+  }
+}
+
+function getWithApiAliases(app: express.Express, path: string, ...handlers: RequestHandler[]) {
+  for (const alias of withApiAliases(path)) {
+    app.get(alias, ...handlers)
   }
 }
 
@@ -114,21 +136,25 @@ export function createApp(services: AppServices = buildAppServices()) {
     response.json({ status: 'ok' })
   })
 
-  app.use('/api/auth', createAuthRouter(services.authService))
-  app.use('/api/catalog', createCatalogRouter(services.catalogService))
-  app.use('/api/orders', createOrderRouter(services.orderService, services.jwtService))
+  useWithApiAliases(app, '/api/auth', createAuthRouter(services.authService))
 
-  app.get('/api/me/orders', requireAuth(services.jwtService), requireRole(['CUSTOMER']), async (request, response) => {
+  const catalogRouter = createCatalogRouter(services.catalogService)
+  useWithApiAliases(app, '/api/catalog', catalogRouter)
+  app.use('/', catalogRouter)
+
+  useWithApiAliases(app, '/api/orders', createOrderRouter(services.orderService, services.jwtService))
+
+  getWithApiAliases(app, '/api/me/orders', requireAuth(services.jwtService), requireRole(['CUSTOMER']), async (request, response) => {
     const orders = await services.orderService.listOwnOrders(request.user!.id)
     response.json({ orders })
   })
 
-  app.get('/api/attendant/orders', requireAuth(services.jwtService), requireRole(['ATTENDANT', 'ADMIN']), async (_request, response) => {
+  getWithApiAliases(app, '/api/attendant/orders', requireAuth(services.jwtService), requireRole(['ATTENDANT', 'ADMIN']), async (_request, response) => {
     const orders = await services.orderService.listOperationalOrders()
     response.json({ orders })
   })
 
-  app.use('/api/admin', createAdminRouter(services.adminService, services.jwtService))
+  useWithApiAliases(app, '/api/admin', createAdminRouter(services.adminService, services.jwtService))
 
   app.use(errorHandler)
 

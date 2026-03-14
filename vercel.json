@@ -1,11 +1,15 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "functions": {
-    "api/[...route].ts": {
+    "api/**/*.ts": {
       "maxDuration": 10
     }
   },
   "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api"
+    },
     {
       "source": "/((?!api/|assets/|images/|favicon\\.svg).*)",
       "destination": "/index.html"
