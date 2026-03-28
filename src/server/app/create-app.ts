@@ -62,7 +62,7 @@ function withApiAliases(path: string) {
   return [...new Set([normalizedPath, withoutApiPrefix])]
 }
 
-function useWithApiAliases(app: express.Express, path: string, router: express.Router) {
+function mountWithApiAliases(app: express.Express, path: string, router: express.Router) {
   for (const alias of withApiAliases(path)) {
     app.use(alias, router)
   }
@@ -136,13 +136,13 @@ export function createApp(services: AppServices = buildAppServices()) {
     response.json({ status: 'ok' })
   })
 
-  useWithApiAliases(app, '/api/auth', createAuthRouter(services.authService))
+  mountWithApiAliases(app, '/api/auth', createAuthRouter(services.authService))
 
   const catalogRouter = createCatalogRouter(services.catalogService)
-  useWithApiAliases(app, '/api/catalog', catalogRouter)
+  mountWithApiAliases(app, '/api/catalog', catalogRouter)
   app.use('/', catalogRouter)
 
-  useWithApiAliases(app, '/api/orders', createOrderRouter(services.orderService, services.jwtService))
+  mountWithApiAliases(app, '/api/orders', createOrderRouter(services.orderService, services.jwtService))
 
   getWithApiAliases(app, '/api/me/orders', requireAuth(services.jwtService), requireRole(['CUSTOMER']), async (request, response) => {
     const orders = await services.orderService.listOwnOrders(request.user!.id)
@@ -154,7 +154,7 @@ export function createApp(services: AppServices = buildAppServices()) {
     response.json({ orders })
   })
 
-  useWithApiAliases(app, '/api/admin', createAdminRouter(services.adminService, services.jwtService))
+  mountWithApiAliases(app, '/api/admin', createAdminRouter(services.adminService, services.jwtService))
 
   app.use(errorHandler)
 
